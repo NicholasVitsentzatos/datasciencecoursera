@@ -1,0 +1,94 @@
+---
+title: "Practical Machine Learning"
+author: "Nicholas Vitsentzatos"
+date: "29/4/2021"
+output: html_document
+---
+
+#Synopsis
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways.The goal of your project is to predict the manner in which they did the exercise.
+
+The training data for this project are available here: 
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har.
+
+## Loading Data and the required library
+```{r,echo=TRUE,results='asis'}
+library(caret)
+#download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",destfile="training.csv")
+#download.file("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv",destfile="testing.csv")
+Training<-read.csv("training.csv")
+Testing<-read.csv("testing.csv")
+dim(Training);dim(Testing)
+```
+So 19622 observations for the training data set,20 for the test data and 160 variable in both of the data sets.Let's take a look to get a sense of the preprocessing we have to do.
+## Processing Data
+```{r}
+colnames(Training)
+head(Training)
+```
+As we can see there are a lot of irrelevant columns that we have to remove(based on the prediction variables they used previously in http://groupware.les.inf.puc-rio.br/public/papers/2012.Ugulino.WearableComputing.HAR.Classifier.RIBBON.pdf ).Also there are many cases of columns that have NA values that we also have to remove.
+
+```{r}
+Training<-subset(Training,select = -c(X,user_name,raw_timestamp_part_1,raw_timestamp_part_2,cvtd_timestamp,new_window,num_window))
+Testing<-subset(Testing,select = -c(X,user_name,raw_timestamp_part_1,raw_timestamp_part_2,cvtd_timestamp,new_window,num_window))
+NaValues<-sapply(Training, function(x) mean(is.na(x))) > 0.95
+Training<- Training[,NaValues== FALSE]
+Testing<- Testing[,NaValues== FALSE]
+```
+For the last step of the preprocessing process we will the columns that have nearly zero variance.
+```{r}
+nsv<-nearZeroVar(Training,saveMetrics=FALSE)
+Training<- Training[,-nsv]
+Testing<- Testing[,-nsv]
+```
+## Spliting Data for training and testing.We will do 70% for training and 30% for testing 
+```{r}
+inTrain  <- createDataPartition(Training$classe, p=0.7, list=FALSE)
+TrainSet <- Training[inTrain, ]
+TestSet  <- Training[-inTrain, ]
+dim(TrainSet);dim(TestSet)
+```
+## Model Training
+### Model Training with Predicting with Trees(regression and classification) method
+```{r}
+modFit1<-train(classe~.,method="rpart",data=Training)
+print(modFit1$finalModel)
+library(rattle)
+par(mfrow=c(1,2))
+plot(modFit1$finalModel,uniform = TRUE,main="Classification Tree")
+text(modFit1$finalModel,use.n = TRUE,all = TRUE,cex=-1)
+fancyRpartPlot(modFit1$finalModel)
+predict(modFit1,newdata = Testing)
+confusionMatrix(modFit1, Testing$classe)
+```
+As we can see the accuracy is only 0.5121.So we have to use different method to get a better accuracy for the data.
+
+### Model Training with Random Forest method
+We set the parameter ntree to produce only 100 trees otherwise the training process takes to long
+```{r}
+library(randomForest)
+modFit2<-train(classe~.,method="rf",data=Training,ntree=100)
+predict(modFit2,newdata = Testing)
+confusionMatrix(modFit2, Testing$classe)
+```
+
+The accuracy value with this method is substantially better than the one we used before (Accuracy = 0.9927).
+In here we set the parameter verbose to FALSE to hide the iteration that are made to produce the model
+```{r}
+library(gbm)
+modFit3<-train(classe~.,method="gbm",data=Training,verbose = FALSE)
+predict(modFit3,newdata = Testing)
+confusionMatrix(modFit3, Testing$classe)
+```
+
+Finally the accuracy value with this method is also good but not as good as the one before(Accuracy= 0.9601 ).
+
+# Conclusion 
+The model with the rpart method is inappropriate for the data as it's accuracy is close to 50%.On the other hand the models with the rf and gbm methods perform far better(although they take really long time to return results, especially the one with the gbm method) and are far more accurate with 99% and 96% respectively.So for our predictions the model with the rf method will be the one we choose.One last thing that is worth noting is that both the random forest and boosting models returned similar predictions for the test set and it's good that we see that given that there is (little) difference in the accuracy values
