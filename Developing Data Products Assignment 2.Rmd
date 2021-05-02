@@ -1,0 +1,23 @@
+---
+title: "Assignment 2"
+author: "Nicholas Vitsentzatos"
+date: "2/5/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+# May 2nd, 2021 
+We are going to create a map on leaflet that shows in circles the university centers of the capital of Greece .When you click a circle it is going to show the name of the university and if you click it again it will send you to its site page.Finally a Legend is added in the top right corners with the names of every university shown and the color we assigned to it.
+```{r,echo=FALSE}
+library(leaflet)
+#Icons<-makeIcon(iconUrl=c("https://sse.army.gr/sites/sse.army.gr/files/logo_name_sse.png","https://www2.aua.gr/sites/default/files/logo100new.jpg","https://www.uoa.gr/fileadmin/user_upload/uoa_logo_gr.svg","https://www.ntua.gr/images/logos/logo.png","https://www.aueb.gr/newopa/icons/menu/logo_opa.png","https://www.unipi.gr/unipi/images/images/logopapei3.png","https://library.panteion.gr/wp-content/uploads/2019/10/cropped-website_logo-1.jpg","https://www.hua.gr/files/logo.png","https://imetafrasi.gr/data/pr_categories/1/asfa-anotati-sxoli-kalwn-texnwn-en7t.png)
+Sites<-c("<a href='http://sse.army.gr/'>Στρατιωτική Σχολή Ευελπίδων</a>","<a href='http://www.aua.gr/'>Γεωπονικό Πανεπιστήμιο Αθηνών
+</a>","<a href='https://www.uoa.gr/'>Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών
+</a>","<a href='https://www.ntua.gr/el/'>Εθνικό Μετσόβιο Πολυτεχνείο</a>","<a href='http://www.aueb.gr/'>Οικονομικό Πανεπιστήμιο Αθηνών</a>","<a href='http://www.unipi.gr/unipi/'>Πανεπιστήμιο Πειραιώς</a>","<a href='http://library.panteion.gr/'>University of the Panteios</a>","<a href='https://www.hua.gr/'>Χαροκόπειο Πανεπιστήμιο</a>","<a href='http://www.asfa.gr/'>Ανωτάτη Σχολή Καλών Τεχνών</a>")
+df<-data.frame(lat=c(37.84464129429832,37.983393849884855,37.96804375398384,37.98766658480252,37.99463385635135,37.94244442348806,37.960302715069886,37.96209376768493,37.962969441602404),lng=c(23.815699721294454,23.705460199999997,23.778386692614728,23.731782290031855,23.732940146022262,23.652996846022255,23.719418815340752,23.708391446022258,23.688956007955486),Colors=c("blue","red","yellow","orange","green","black","grey","pink","purple"))
+df%>%
+  leaflet()%>%
+  addTiles()%>%
+  addCircleMarkers(color=df$Colors,popup=Sites)%>%
+  addLegend(labels=c("Στρατιωτική Σχολή Ευελπίδων","Γεωπονικό Πανεπιστήμιο Αθηνών","Εθνικό και Καποδιστριακό Πανεπιστήμιο Αθηνών","Εθνικό Μετσόβιο Πολυτεχνείο","Οικονομικό Πανεπιστήμιο Αθηνών","Πανεπιστήμιο Πειραιώς","University of the Panteios","Χαροκόπειο Πανεπιστήμιο","Ανωτάτη Σχολή Καλών Τεχνών"),colors=df$Colors)
+```
