@@ -1,0 +1,91 @@
+---
+title: "Developing Data Products 4 Pitch"
+author: "Nicholas Vitsentzatos"
+date: "4/5/2021"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+This presentation is part of the Developing Data Products Coursera.org course project submission.
+The Shiny app source code is available at:https://github.com/NicholasVitsentzatos/datasciencecoursera/tree/master/Developing-Data-Products-Assignmet-4
+
+## Main idea of the app
+
+- Your are going to select how many points you want to be displayed on X axis and on the Y axis
+- You will have the options whether you want to show the names of the axis and the title of the plot
+- After the graph is generated you can brush over the points you want to fit a regression line 
+
+## Code for the R console that will produce similar results
+
+```{r echo = TRUE}
+set.seed(123)
+number_of_points_we_want=20
+dataX <- rnorm(number_of_points_we_want)
+dataY <- rnorm(number_of_points_we_want)
+df<-data.frame(cbind(dataX,dataY))
+fit<-lm(dataY ~ dataX, data =df)
+plot(df)
+abline(fit, col = "blue", lwd = 2)
+```
+
+## Ui / Server Code
+```{r,echo=TRUE,eval=FALSE}
+ui <- fluidPage(
+    titlePanel("Generating random numbers and fitting a regression line on the ones we select"),
+    sidebarLayout(
+        sidebarPanel(
+            numericInput("numeric", "How Many Random Numbers Should be Plotted?", 
+                         value = 100, min = 1, max = 200, step = 1),
+            sliderInput("sliderX", "Pick Minimum and Maximum X Values",
+                        -80, 80, value = c(-50, 50)),
+            sliderInput("sliderY", "Pick Minimum and Maximum Y Values",
+                        -80, 80, value = c(-50, 50)),
+            checkboxInput("show_xlab", "Show/Hide X Axis Label", value = TRUE),
+            checkboxInput("show_ylab", "Show/Hide Y Axis Label", value = TRUE),
+            checkboxInput("show_title", "Show/Hide Title")
+        ),
+        mainPanel(
+            h3("Please select some points on the graph"),
+            plotOutput("plot1",brush = brushOpts(
+                id = "brush1"
+            ))
+        )
+    )
+)
+
+server <- function(input, output) {
+    output$plot1 <- renderPlot({
+        set.seed(2016-05-25)
+        number_of_points <- input$numeric
+        minX <- input$sliderX[1]
+        maxX <- input$sliderX[2]
+        minY <- input$sliderY[1]
+        maxY <- input$sliderY[2]
+        dataX <- rnorm(number_of_points, minX, maxX)
+        dataY <- rnorm(number_of_points, minY, maxY)
+        xlab <- ifelse(input$show_xlab, "X Axis", "")
+        ylab <- ifelse(input$show_ylab, "Y Axis", "")
+        main <- ifelse(input$show_title, "Graph of the random points :P", "")
+        df<-data.frame(cbind(dataX,dataY))
+        model <- reactive({
+            
+            brushed_data <- brushedPoints(df, input$brush1,
+                                          xvar = "dataX", yvar = "dataY")
+            if(nrow(brushed_data) < 2){
+                return(NULL)
+            }
+            lm(dataY ~ dataX, data = brushed_data)
+        })
+        plot(df$dataX, df$dataY, xlab = xlab, ylab = ylab, main = main,
+             xlim = c(-100, 100), ylim = c(-100, 100))
+        if(!is.null(model())){
+            abline(model(), col = "blue", lwd = 2)
+        }
+    })
+}
+```
